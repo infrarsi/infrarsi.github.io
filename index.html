@@ -1014,7 +1014,7 @@ claude --version
 <span class="code-comment"># Drop your launch script directly into InfraRSI using claude-cli</span>
 infrarsi optimize ./train.sh \
   --llm claude-cli \
-  --rounds 8 \
+  --screens 16 \
   --target-speedup 1.8</code></pre>
               </div>
             </div>
@@ -1024,17 +1024,18 @@ infrarsi optimize ./train.sh \
                   <span>infrarsi.yaml (Optional Persistent Config)</span>
                   <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
-                <pre><code>project:
-  name: qwen-pretrain
-  root: .
-  entry_command: bash train.sh
+                <pre><code>schema: infrarsi-project-v1
+name: qwen-pretrain
+launch:
+  command: "bash train.sh"
 llm:
   backend: claude-cli
-  model: claude-sonnet-4-6
+  model: sonnet
 search:
   strategy: bcomp
-  rounds: 8
-  target_speedup: 1.8</code></pre>
+  budget:
+    screens: 16
+    target_speedup: 1.8</code></pre>
               </div>
             </div>
           </div>
@@ -1067,7 +1068,7 @@ codex --version
 <span class="code-comment"># Optimize your training codebase using logged-in Codex CLI</span>
 infrarsi optimize ./train.sh \
   --llm codex-cli \
-  --rounds 8 \
+  --screens 16 \
   --target-speedup 1.8 \
   --token-budget 500k</code></pre>
               </div>
@@ -1078,17 +1079,18 @@ infrarsi optimize ./train.sh \
                   <span>infrarsi.yaml (Optional Persistent Config)</span>
                   <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
-                <pre><code>project:
-  name: llama-finetune
-  root: .
-  entry_command: bash train.sh
+                <pre><code>schema: infrarsi-project-v1
+name: llama-finetune
+launch:
+  command: "bash train.sh"
 llm:
   backend: codex-cli
-  model: gpt-5.4
+  model: default
 search:
   strategy: bcomp
-  rounds: 8
-  token_budget: 500000</code></pre>
+  budget:
+    screens: 16
+    llm_tokens: 500000</code></pre>
               </div>
             </div>
           </div>
@@ -1104,10 +1106,10 @@ search:
               </h3>
               <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1rem;">
                 <span class="lang-en">
-                  InfraRSI has native first-class support for DeepSeek's official platform (<code>https://api.deepseek.com/v1</code>). Export <code>DEEPSEEK_API_KEY</code> and InfraRSI will automatically select the DeepSeek backend—or pass <code>--llm deepseek:deepseek-chat</code> / <code>--llm deepseek:deepseek-reasoner</code>.
+                  InfraRSI has native first-class support for DeepSeek's official platform (<code>https://api.deepseek.com</code>). Export <code>DEEPSEEK_API_KEY</code> and InfraRSI will automatically select the DeepSeek backend—or pass <code>--llm deepseek:deepseek-chat</code> / <code>--llm deepseek:deepseek-reasoner</code>.
                 </span>
                 <span class="lang-zh">
-                  InfraRSI 原生内置对 DeepSeek 官方 API（<code>https://api.deepseek.com/v1</code>）的一等公民支持。只需设置环境变量 <code>DEEPSEEK_API_KEY</code>，即可自动连接 <code>deepseek-chat</code>（V3）或 <code>deepseek-reasoner</code>（R1），以极低成本完成训练系统调优。
+                  InfraRSI 原生内置对 DeepSeek 官方 API（<code>https://api.deepseek.com</code>）的一等公民支持。只需设置环境变量 <code>DEEPSEEK_API_KEY</code>，即可自动连接 <code>deepseek-chat</code>（V3）或 <code>deepseek-reasoner</code>（R1），以极低成本完成训练系统调优。
                 </span>
               </p>
               <div class="code-box">
@@ -1120,8 +1122,8 @@ search:
 <span class="code-comment"># Use DeepSeek V3 (deepseek-chat) or R1 (deepseek-reasoner)</span>
 infrarsi optimize ./train.sh \
   --llm deepseek:deepseek-chat \
-  --rounds 10 \
-  --budget 5.0</code></pre>
+  --screens 16 \
+  --token-budget 500k</code></pre>
               </div>
             </div>
             <div>
@@ -1130,18 +1132,19 @@ infrarsi optimize ./train.sh \
                   <span>infrarsi.yaml (DeepSeek Config)</span>
                   <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
-                <pre><code>project:
-  name: moe-training
-  root: .
-  entry_command: bash train.sh
+                <pre><code>schema: infrarsi-project-v1
+name: moe-training
+launch:
+  command: "bash train.sh"
 llm:
   backend: deepseek
   model: deepseek-chat
   api_key_env: DEEPSEEK_API_KEY
-  base_url: https://api.deepseek.com/v1
+  base_url: https://api.deepseek.com
 search:
   strategy: bcomp
-  rounds: 10</code></pre>
+  budget:
+    screens: 16</code></pre>
               </div>
             </div>
           </div>
@@ -1189,10 +1192,10 @@ infrarsi optimize ./train.sh \
                   <span>infrarsi.yaml (Custom Endpoint Config)</span>
                   <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
-                <pre><code>project:
-  name: custom-api-run
-  root: .
-  entry_command: bash train.sh
+                <pre><code>schema: infrarsi-project-v1
+name: custom-api-run
+launch:
+  command: "bash train.sh"
 llm:
   backend: openai-compat
   model: deepseek-ai/DeepSeek-V3
@@ -1200,7 +1203,8 @@ llm:
   api_key_env: SILICONFLOW_API_KEY
 search:
   strategy: bcomp
-  rounds: 8</code></pre>
+  budget:
+    screens: 16</code></pre>
               </div>
             </div>
           </div>
