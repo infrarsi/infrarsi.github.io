@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InfraRSI — Autonomous Recursive Self-Improvement for LLM Training Infrastructure</title>
+  <meta name="description" content="Drop in your training launch script, and InfraRSI autonomously profiles, synthesizes, and verifies system-level GPU optimizations with B-Comp search." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #070b14;
+      --bg-secondary: #0d1322;
+      --bg-card: rgba(17, 25, 44, 0.78);
+      --bg-card-hover: rgba(24, 35, 62, 0.92);
+      --bg-code: #060911;
+      --border-subtle: rgba(148, 163, 184, 0.14);
+      --border-glow: rgba(56, 189, 248, 0.42);
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent-cyan: #38bdf8;
+      --accent-blue: #0284c7;
+      --accent-indigo: #6366f1;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.55);
+      --radius-md: 12px;
+      --radius-lg: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      line-height: 1.65;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 15% 5%, rgba(14, 165, 233, 0.13), transparent 40%),
+        radial-gradient(circle at 85% 12%, rgba(99, 102, 241, 0.13), transparent 42%),
+        radial-gradient(circle at 50% 60%, rgba(16, 185, 129, 0.06), transparent 50%),
+        var(--bg-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Bilingual visibility rules */
+    html[data-lang="en"] .lang-zh { display: none !important; }
+    html[data-lang="zh"] .lang-en { display: none !important; }
+
+    a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: #7dd3fc;
+    }
+
+    code, pre {
+      font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    }
+
+    /* Sticky Top Navigation */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(7, 11, 20, 0.82);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .navbar-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.95rem;
+      color: #070b14;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+    }
+    .brand-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent-cyan);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.4rem;
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+    .nav-links a {
+      color: var(--text-secondary);
+    }
+    .nav-links a:hover {
+      color: var(--accent-cyan);
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .lang-switch {
+      display: inline-flex;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 999px;
+      padding: 0.2rem;
+    }
+    .lang-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.32rem 0.75rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .lang-btn.active {
+      background: linear-gradient(135deg, #0284c7, #4f46e5);
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);
+    }
+    .btn-github {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.42rem 0.95rem;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.2s ease;
+    }
+    .btn-github:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--border-glow);
+      color: #ffffff;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 3.2rem 0 2.5rem;
+      text-align: center;
+    }
+    .hero-banner-wrap {
+      max-width: 880px;
+      margin: 0 auto 1.6rem;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.6), 0 0 35px rgba(14, 165, 233, 0.15);
+    }
+    .hero-banner-wrap img {
+      display: block;
+      width: 100%;
+      max-height: 190px;
+      object-fit: cover;
+    }
+    .eyebrow-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.2rem;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+    .pill.cyan {
+      border-color: rgba(56, 189, 248, 0.4);
+      color: #7dd3fc;
+      background: rgba(2, 132, 199, 0.14);
+    }
+    .pill.emerald {
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+      background: rgba(16, 185, 129, 0.12);
+    }
+    .pill.amber {
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fcd34d;
+      background: rgba(245, 158, 11, 0.12);
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 4.2vw, 3.35rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      max-width: 960px;
+      margin: 0 auto 1.15rem;
+      background: linear-gradient(135deg, #ffffff 10%, #bae6fd 55%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-sub {
+      font-size: 1.12rem;
+      color: var(--text-secondary);
+      max-width: 820px;
+      margin: 0 auto 1.9rem;
+    }
+    .hero-cta-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.8rem 1.55rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.96rem;
+      background: linear-gradient(135deg, #0284c7, #4f46e5);
+      color: #ffffff;
+      box-shadow: 0 10px 28px rgba(2, 132, 199, 0.4);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      color: #ffffff;
+      box-shadow: 0 14px 34px rgba(2, 132, 199, 0.55);
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.8rem 1.45rem;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.96rem;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      transition: all 0.18s ease;
+    }
+    .btn-secondary:hover {
+      border-color: var(--border-glow);
+      background: rgba(30, 41, 59, 0.9);
+      color: #ffffff;
+    }
+
+    /* Hero KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.35rem;
+      text-align: left;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-glow);
+    }
+    .kpi-val {
+      font-size: 1.95rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--accent-cyan);
+      line-height: 1.15;
+      margin-bottom: 0.3rem;
+    }
+    .kpi-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+    .kpi-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    /* Section Styling */
+    section {
+      padding: 3.8rem 0;
+      border-top: 1px solid rgba(148, 163, 184, 0.09);
+    }
+    .section-header {
+      margin-bottom: 2.2rem;
+    }
+    .section-tag {
+      display: inline-block;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-cyan);
+      margin-bottom: 0.45rem;
+    }
+    .section-title {
+      font-size: clamp(1.6rem, 3vw, 2.25rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 0.6rem;
+    }
+    .section-desc {
+      font-size: 1.02rem;
+      color: var(--text-secondary);
+      max-width: 820px;
+    }
+
+    /* Feature Cards (Why InfraRSI) */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 1.25rem;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.6rem;
+      transition: all 0.22s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-glow);
+      transform: translateY(-3px);
+    }
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      margin-bottom: 1rem;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .feature-card h3 {
+      font-size: 1.12rem;
+      font-weight: 700;
+      margin-bottom: 0.55rem;
+      color: var(--text-primary);
+    }
+    .feature-card p {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+
+    /* Interactive Tabs for Getting Started (4 LLM Paths) */
+    .tabs-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+    .tabs-header {
+      display: flex;
+      flex-wrap: wrap;
+      background: rgba(7, 11, 20, 0.75);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.5rem 0.5rem 0;
+      gap: 0.35rem;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.75rem 1.15rem;
+      border-radius: 10px 10px 0 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.18s ease;
+    }
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .tab-btn.active {
+      background: var(--bg-card);
+      color: var(--accent-cyan);
+      border-color: var(--border-subtle);
+    }
+    .tab-badge {
+      font-size: 0.68rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.16);
+      color: #6ee7b7;
+      font-weight: 700;
+    }
+    .tab-panel {
+      display: none;
+      padding: 1.75rem;
+    }
+    .tab-panel.active {
+      display: block;
+    }
+    .tab-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .tab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Code Blocks */
+    .code-box {
+      position: relative;
+      background: var(--bg-code);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .code-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.95rem;
+      background: rgba(15, 23, 42, 0.9);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .copy-btn {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--accent-cyan);
+      border-radius: 6px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .copy-btn:hover {
+      background: rgba(56, 189, 248, 0.25);
+      color: #ffffff;
+    }
+    .code-box pre {
+      padding: 1.05rem 1.15rem;
+      overflow-x: auto;
+      font-size: 0.84rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+    .code-comment { color: #64748b; }
+    .code-kw { color: #38bdf8; font-weight: 600; }
+    .code-str { color: #6ee7b7; }
+    .code-flag { color: #fcd34d; }
+
+    /* Stopping Conditions & TokenGovernor Interactive Box */
+    .stop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.15rem;
+      margin-bottom: 2rem;
+    }
+    .stop-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.35rem;
+    }
+    .stop-card .flag-pill {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.22rem 0.6rem;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      margin-bottom: 0.65rem;
+    }
+    .stop-card h4 {
+      font-size: 1.02rem;
+      margin-bottom: 0.4rem;
+    }
+    .stop-card p {
+      font-size: 0.87rem;
+      color: var(--text-secondary);
+    }
+
+    .governor-panel {
+      background: linear-gradient(145deg, rgba(13, 19, 34, 0.95), rgba(17, 25, 44, 0.88));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 1.85rem;
+    }
+    .zone-bar {
+      display: grid;
+      grid-template-columns: 70fr 20fr 10fr;
+      gap: 4px;
+      margin: 1.25rem 0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .zone-seg {
+      padding: 0.85rem 1rem;
+      font-size: 0.83rem;
+      font-weight: 700;
+    }
+    .zone-green {
+      background: rgba(16, 185, 129, 0.18);
+      border-left: 4px solid #10b981;
+      color: #6ee7b7;
+    }
+    .zone-amber {
+      background: rgba(245, 158, 11, 0.18);
+      border-left: 4px solid #f59e0b;
+      color: #fcd34d;
+    }
+    .zone-rose {
+      background: rgba(244, 63, 94, 0.18);
+      border-left: 4px solid #f43f5e;
+      color: #fda4af;
+    }
+
+    /* Pipeline Steps */
+    .pipeline-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.2rem;
+    }
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.3rem;
+      position: relative;
+    }
+    .step-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .step-card h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.45rem;
+      color: var(--text-primary);
+    }
+    .step-card p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Benchmark Figure Box */
+    .figure-frame {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 1.5rem;
+    }
+    .figure-frame img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+    th, td {
+      padding: 0.85rem 1.1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    th {
+      background: rgba(7, 11, 20, 0.65);
+      color: var(--accent-cyan);
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover td {
+      background: rgba(56, 189, 248, 0.04);
+    }
+
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 2.5rem 0;
+      margin-top: 3rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="#" class="brand">
+        <span class="brand-icon">⚡</span>
+        <span>InfraRSI</span>
+        <span class="brand-badge">B-Comp Engine</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#why">
+          <span class="lang-en">Why InfraRSI</span>
+          <span class="lang-zh">核心优势</span>
+        </a>
+        <a href="#quickstart">
+          <span class="lang-en">Getting Started (4 LLM Paths)</span>
+          <span class="lang-zh">快速启动（4 种大模型接入）</span>
+        </a>
+        <a href="#stopping">
+          <span class="lang-en">Stopping &amp; Token Budget</span>
+          <span class="lang-zh">停止条件与 Token 预算控制</span>
+        </a>
+        <a href="#algorithm">
+          <span class="lang-en">5-Stage &amp; B-Comp</span>
+          <span class="lang-zh">宏观五步与 B-Comp 算法</span>
+        </a>
+        <a href="#benchmarks">
+          <span class="lang-en">Benchmarks</span>
+          <span class="lang-zh">实测效果</span>
+        </a>
+        <a href="#reference">
+          <span class="lang-en">CLI Reference</span>
+          <span class="lang-zh">命令参考</span>
+        </a>
+      </div>
+
+      <div class="nav-actions">
+        <div class="lang-switch" role="group" aria-label="Language Switcher">
+          <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" id="btn-zh" onclick="setLang('zh')">中文</button>
+        </div>
+        <a class="btn-github" href="https://github.com/YuchuanTian/infrasmith" target="_blank" rel="noopener">
+          <span>★ GitHub</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- Hero Section -->
+    <header class="hero">
+      <div class="hero-banner-wrap">
+        <img src="assets/logo_banner.jpg" alt="InfraRSI Banner" />
+      </div>
+
+      <div class="eyebrow-row">
+        <span class="pill cyan">
+          <span class="lang-en">🚀 Zero-Config 1-Command Harness</span>
+          <span class="lang-zh">🚀 零配置单命令自动优化套件</span>
+        </span>
+        <span class="pill emerald">
+          <span class="lang-en">💰 Ultra-Low Token Cost (&lt;$10 / Workload)</span>
+          <span class="lang-zh">💰 极低 Token 消耗（单负载低于 $10）</span>
+        </span>
+        <span class="pill amber">
+          <span class="lang-en">🔌 Claude Code · Codex · DeepSeek · Any OpenAI API</span>
+          <span class="lang-zh">🔌 支持已登录 Claude / Codex · DeepSeek · 任意第三方 API</span>
+        </span>
+      </div>
+
+      <h1>
+        <span class="lang-en">Autonomous Recursive Self-Improvement for LLM Training Infrastructure</span>
+        <span class="lang-zh">面向大模型训练基础设施的自主递归演进优化引擎</span>
+      </h1>
+
+      <p class="hero-sub">
+        <span class="lang-en">
+          Hand InfraRSI your training codebase or <code>train.sh</code> launch script. It autonomously profiles hardware bottlenecks, synthesizes orthogonal multi-family patches via <strong>Bounded-Composition (B-Comp)</strong> search, and verifies 100% numerical &amp; training equivalence—delivering principal-systems-engineer speedups so researchers can focus purely on models and data.
+        </span>
+        <span class="lang-zh">
+          只需将训练代码仓或 <code>train.sh</code> 启动脚本交给 InfraRSI，系统即可自动剖析 GPU 算子与通信瓶颈，通过 <strong>有界组合搜索（B-Comp）</strong> 合成正交加速补丁，并通过四道等价性门禁严格验证——无需手写底层系统调优代码，即可让每个研究团队轻松获得顶尖系统架构师级的训练吞吐与 MFU 提升。
+        </span>
+      </p>
+
+      <div class="hero-cta-row">
+        <a href="#quickstart" class="btn-primary">
+          <span class="lang-en">⚡ Quick Start in 60 Seconds</span>
+          <span class="lang-zh">⚡ 60 秒快速上手指南</span>
+        </a>
+        <a href="https://github.com/YuchuanTian/infrasmith" target="_blank" rel="noopener" class="btn-secondary">
+          <span class="lang-en">📦 View GitHub Repository</span>
+          <span class="lang-zh">📦 访问 GitHub 代码仓库</span>
+        </a>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-val">1.83×</div>
+          <div class="kpi-title">
+            <span class="lang-en">4-Workload Geomean @ $10</span>
+            <span class="lang-zh">四任务 $10 预算几何平均加速</span>
+          </div>
+          <div class="kpi-desc">
+            <span class="lang-en">1.91× full-budget paired geomean across 8×H100, 16×H100, and 8×L20X clusters.</span>
+            <span class="lang-zh">在 8×H100、16×H100 与 8×L20X 集群上实现 1.91× 全程配对几何平均加速。</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val">3.24×</div>
+          <div class="kpi-title">
+            <span class="lang-en">Peak Verified Speedup</span>
+            <span class="lang-zh">单任务最高实测加速比</span>
+          </div>
+          <div class="kpi-desc">
+            <span class="lang-en">Achieved on Gemma-4 (8×L20X) with strict ≤3% loss deviation and fresh re-run validation.</span>
+            <span class="lang-zh">在 Gemma-4 (8×L20X) 上实测达成，严格满足 Loss 偏差 ≤3% 与独立复测。</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val">&lt; $10</div>
+          <div class="kpi-title">
+            <span class="lang-en">Economical Token Spend</span>
+            <span class="lang-zh">极高性价比的 Token 开销</span>
+          </div>
+          <div class="kpi-desc">
+            <span class="lang-en">Adaptive 3-Zone TokenGovernor &amp; compact diff prompts keep token costs minimal.</span>
+            <span class="lang-zh">自适应三区 Token 预算控制器与紧凑 Diff 提示词，大幅降低 API 开销。</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val">4 Paths</div>
+          <div class="kpi-title">
+            <span class="lang-en">Universal LLM Backends</span>
+            <span class="lang-zh">全栈 LLM 后端无缝接入</span>
+          </div>
+          <div class="kpi-desc">
+            <span class="lang-en">Logged-in Claude Code, logged-in Codex CLI, Official DeepSeek API, or any 3rd-party API.</span>
+            <span class="lang-zh">直接复用已登录的 Claude / Codex CLI、DeepSeek 官方 API 或任意第三方接口。</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Section 1: Why InfraRSI (Core Strengths) -->
+    <section id="why">
+      <div class="section-header">
+        <span class="section-tag">
+          <span class="lang-en">Design Philosophy &amp; Core Strengths</span>
+          <span class="lang-zh">设计理念与核心优势</span>
+        </span>
+        <h2 class="section-title">
+          <span class="lang-en">World-Class Systems Acceleration—Accessible to Every AI Team</span>
+          <span class="lang-zh">让每一个模型研发团队都拥有自动化训推系统加速能力</span>
+        </h2>
+        <p class="section-desc">
+          <span class="lang-en">
+            Modern distributed training stacks (PyTorch, Megatron-LM, DeepSpeed, Accelerate, FSDP) expose hundreds of interacting knobs across attention kernels, compiler flags, memory layouts, and collective communication. InfraRSI turns deep systems engineering into an autonomous, reproducible, and budget-friendly CLI workflow.
+          </span>
+          <span class="lang-zh">
+            现代分布式训练框架（PyTorch、Megatron-LM、DeepSpeed、Accelerate、FSDP）涉及注意力算子、图编译、显存重计算与集合通信等数百个相互耦合的底层旋钮。InfraRSI 将繁琐的底层系统工程转化为全自动、可复现、低成本的命令行闭环。
+          </span>
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🪄</div>
+          <h3>
+            <span class="lang-en">Drop-In Usability (Zero Code Instrumentation)</span>
+            <span class="lang-zh">极低上手门槛（零侵入式一键启动）</span>
+          </h3>
+          <p>
+            <span class="lang-en">
+              No need to refactor your training loop or write search spaces. Point <code>infrarsi optimize</code> directly at your existing <code>train.sh</code> script or repository directory—InfraRSI automatically detects <code>torchrun</code>, <code>deepspeed</code>, <code>accelerate</code>, and GPU topologies.
+            </span>
+            <span class="lang-zh">
+              无需改造训练代码，也无需手写搜索空间。直接将现有的 <code>train.sh</code> 启动脚本或代码目录丢给 <code>infrarsi optimize</code>，即可自动识别 <code>torchrun</code>、<code>deepspeed</code>、<code>accelerate</code> 与 GPU 拓扑并开始优化。
+            </span>
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">💎</div>
+          <h3>
+            <span class="lang-en">Ultra-Economical Token Efficiency</span>
+            <span class="lang-zh">极低 Token 消耗，经济高效</span>
+          </h3>
+          <p>
+            <span class="lang-en">
+              Unlike brute-force coding agents that dump entire repositories into every prompt, InfraRSI uses targeted AST/profiler slices, UCB family bandits, and a 3-Zone <strong>TokenGovernor</strong> that discounts cached CLI prefix tokens—delivering ~1.83× speedups for under $10 in token spend.
+            </span>
+            <span class="lang-zh">
+              告别把整个代码库反复塞进上下文的高昂消耗。InfraRSI 通过瓶颈切片提取、UCB 家族多臂赌博机与三区自适应 <strong>TokenGovernor</strong>（自动折算 CLI 缓存前缀），以不到 $10 的极低 Token 成本实现 1.83× 平均加速。
+            </span>
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🔌</div>
+          <h3>
+            <span class="lang-en">Bring Your Own LLM (Subscription or API)</span>
+            <span class="lang-zh">全面兼容各类大模型与订阅账号</span>
+          </h3>
+          <p>
+            <span class="lang-en">
+              Already logged into <strong>Claude Code</strong> or <strong>OpenAI Codex</strong> on your dev machine? Use them directly with zero extra API billing! Prefer low-cost APIs? Plug in <strong>DeepSeek Official API</strong>, OpenRouter, SiliconFlow, Together, or local vLLM endpoints.
+            </span>
+            <span class="lang-zh">
+              开发机已经登录了 <strong>Claude Code</strong> 或 <strong>OpenAI Codex</strong>？无需额外配置 API Key 即可直接调用！需要使用高性价比 API？原生支持 <strong>DeepSeek 官方 API</strong>、硅基流动、OpenRouter 以及本地 vLLM/SGLang。
+            </span>
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3>
+            <span class="lang-en">4-Gate Training Equivalence Guarantee</span>
+            <span class="lang-zh">四道正确性门禁，严防奖励黑客</span>
+          </h3>
+          <p>
+            <span class="lang-en">
+              Every candidate patch is audited in an isolated Git worktree across 4 strict gates: clean process exit, invariant global batch size &amp; optimizer steps, loss curve fidelity (<code>≤ 3%</code> deviation), and an independent fresh re-run wall-clock verification.
+            </span>
+            <span class="lang-zh">
+              每个候选补丁均在隔离的 Git Worktree 中接受四道门禁检验：进程零报错退出、全局 Batch Size 与优化器步数严格不变、Loss 收敛偏差 <code>≤ 3%</code>，以及独立 Fresh Re-run 端到端复测，杜绝任何牺牲模型质量的伪加速。
+            </span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Getting Started for All 4 LLM Paths -->
+    <section id="quickstart">
+      <div class="section-header">
+        <span class="section-tag">
+          <span class="lang-en">Getting Started · 4 LLM Backend Paths</span>
+          <span class="lang-zh">快速启动指南 · 四种大模型接入路径</span>
+        </span>
+        <h2 class="section-title">
+          <span class="lang-en">Install Once, Run with Any LLM You Already Have</span>
+          <span class="lang-zh">一行安装，自由选择最顺手的 LLM 驱动方式</span>
+        </h2>
+        <p class="section-desc">
+          <span class="lang-en">
+            First, install InfraRSI in editable mode from the repository. Then pick any of the 4 supported LLM backends below to start optimizing your training script immediately.
+          </span>
+          <span class="lang-zh">
+            首先克隆并安装 InfraRSI，随后从下方四种大模型接入路径中任选其一，即可直接把训练启动脚本交给它自动完成系统优化。
+          </span>
+        </p>
+      </div>
+
+      <!-- Step 0: Install -->
+      <div class="code-box" style="margin-bottom: 1.75rem;">
+        <div class="code-bar">
+          <span>Step 0 · Install InfraRSI CLI</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>git clone https://github.com/YuchuanTian/infrasmith.git
+cd infrasmith &amp;&amp; pip install -e .</code></pre>
+      </div>
+
+      <!-- Interactive 4-Tab Switcher -->
+      <div class="tabs-wrapper">
+        <div class="tabs-header" role="tablist">
+          <button class="tab-btn active" onclick="switchTab(event, 'tab-claude')">
+            <span>1. Claude Code CLI</span>
+            <span class="tab-badge">
+              <span class="lang-en">Logged-In Session</span>
+              <span class="lang-zh">免 Key 直接用</span>
+            </span>
+          </button>
+          <button class="tab-btn" onclick="switchTab(event, 'tab-codex')">
+            <span>2. OpenAI Codex CLI</span>
+            <span class="tab-badge">
+              <span class="lang-en">Logged-In Session</span>
+              <span class="lang-zh">免 Key 直接用</span>
+            </span>
+          </button>
+          <button class="tab-btn" onclick="switchTab(event, 'tab-deepseek')">
+            <span>3. DeepSeek Official API</span>
+            <span class="tab-badge">
+              <span class="lang-en">Ultra Low Cost</span>
+              <span class="lang-zh">极致性价比</span>
+            </span>
+          </button>
+          <button class="tab-btn" onclick="switchTab(event, 'tab-thirdparty')">
+            <span>4. 3rd-Party &amp; Local APIs</span>
+            <span class="tab-badge">
+              <span class="lang-en">OpenRouter / SiliconFlow / vLLM</span>
+              <span class="lang-zh">任意兼容接口</span>
+            </span>
+          </button>
+        </div>
+
+        <!-- Tab 1: Logged-In Claude Code -->
+        <div id="tab-claude" class="tab-panel active">
+          <div class="tab-grid">
+            <div>
+              <h3 style="margin-bottom: 0.5rem;">
+                <span class="lang-en">Path 1: Use Your Already-Logged-In Claude Code directly</span>
+                <span class="lang-zh">路径一：直接使用已登录的 Claude Code（无需配置 API Key）</span>
+              </h3>
+              <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1rem;">
+                <span class="lang-en">
+                  If you have <code>claude</code> installed and logged in on your machine, InfraRSI invokes <code>claude -p --output-format json</code> in isolated single-shot prompt mode (tools disabled so InfraRSI's B-Comp harness controls all git worktree mutations and 4-gate verifications safely).
+                </span>
+                <span class="lang-zh">
+                  只要你的机器上已安装并登录了 <code>claude</code> CLI，InfraRSI 即可直接复用当前登录态（通过非交互式 JSON 协议生成 B-Comp 候选补丁，并由 InfraRSI 沙箱统一执行四道门禁验证）。
+                </span>
+              </p>
+              <div class="code-box">
+                <div class="code-bar">
+                  <span>Terminal — One-Command Optimization with Claude Code</span>
+                  <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code><span class="code-comment"># Verify your Claude Code CLI session is active</span>
+claude --version
+
+<span class="code-comment"># Drop your launch script directly into InfraRSI using claude-cli</span>
+infrarsi optimize ./train.sh \
+  --llm claude-cli \
+  --rounds 8 \
+  --target-speedup 1.8</code></pre>
+              </div>
+            </div>
+            <div>
+              <div class="code-box">
+                <div class="code-bar">
+                  <span>infrarsi.yaml (Optional Persistent Config)</span>
+                  <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>project:
+  name: qwen-pretrain
+  root: .
+  entry_command: bash train.sh
+llm:
+  backend: claude-cli
+  model: claude-sonnet-4-6
+search:
+  strategy: bcomp
+  rounds: 8
+  target_speedup: 1.8</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Logged-In OpenAI Codex -->
+        <div id="tab-codex" class="tab-panel">
+          <div class="tab-grid">
+            <div>
+              <h3 style="margin-bottom: 0.5rem;">
+                <span class="lang-en">Path 2: Use Your Already-Logged-In OpenAI Codex CLI</span>
+                <span class="lang-zh">路径二：直接使用已登录的 OpenAI Codex CLI（无需配置 API Key）</span>
+              </h3>
+              <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1rem;">
+                <span class="lang-en">
+                  Already signed into OpenAI Codex CLI (<code>codex login</code>)? Pass <code>--llm codex-cli</code> (or <code>--llm codex:gpt-5.4</code>). InfraRSI drives <code>codex exec --json</code> headlessly and automatically discounts cached CLI system prefix tokens in the TokenGovernor!
+                </span>
+                <span class="lang-zh">
+                  如果终端已通过 <code>codex login</code> 登录 OpenAI Codex CLI，只需指定 <code>--llm codex-cli</code>（或 <code>--llm codex:gpt-5.4</code>）。InfraRSI 会通过 <code>codex exec --json</code> 自动驱动，并在预算统计中自动折算 CLI 缓存前缀 Token！
+                </span>
+              </p>
+              <div class="code-box">
+                <div class="code-bar">
+                  <span>Terminal — One-Command Optimization with Codex CLI</span>
+                  <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code><span class="code-comment"># Verify your Codex CLI is installed and logged in</span>
+codex --version
+
+<span class="code-comment"># Optimize your training codebase using logged-in Codex CLI</span>
+infrarsi optimize ./train.sh \
+  --llm codex-cli \
+  --rounds 8 \
+  --target-speedup 1.8 \
+  --token-budget 500k</code></pre>
+              </div>
+            </div>
+            <div>
+              <div class="code-box">
+                <div class="code-bar">
+                  <span>infrarsi.yaml (Optional Persistent Config)</span>
+                  <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>project:
+  name: llama-finetune
+  root: .
+  entry_command: bash train.sh
+llm:
+  backend: codex-cli
+  model: gpt-5.4
+search:
+  strategy: bcomp
+  rounds: 8
+  token_budget: 500000</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Official DeepSeek API -->
+        <div id="tab-deepseek" class="tab-panel">
+          <div class="tab-grid">
+            <div>
+              <h3 style="margin-bottom: 0.5rem;">
+                <span class="lang-en">Path 3: Official DeepSeek API (<code>deepseek-chat</code> &amp; <code>deepseek-reasoner</code>)</span>
+                <span class="lang-zh">路径三：使用 DeepSeek 官方 API（<code>deepseek-chat</code> / <code>deepseek-reasoner</code>）</span>
+              </h3>
+              <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1rem;">
+                <span class="lang-en">
+                  InfraRSI has native first-class support for DeepSeek's official platform (<code>https://api.deepseek.com/v1</code>). Export <code>DEEPSEEK_API_KEY</code> and InfraRSI will automatically select the DeepSeek backend—or pass <code>--llm deepseek:deepseek-chat</code> / <code>--llm deepseek:deepseek-reasoner</code>.
+                </span>
+                <span class="lang-zh">
+                  InfraRSI 原生内置对 DeepSeek 官方 API（<code>https://api.deepseek.com/v1</code>）的一等公民支持。只需设置环境变量 <code>DEEPSEEK_API_KEY</code>，即可自动连接 <code>deepseek-chat</code>（V3）或 <code>deepseek-reasoner</code>（R1），以极低成本完成训练系统调优。
+                </span>
+              </p>
+              <div class="code-box">
+                <div class="code-bar">
+                  <span>Terminal — Official DeepSeek API</span>
+                  <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>export DEEPSEEK_API_KEY="sk-your-deepseek-key"
+
+<span class="code-comment"># Use DeepSeek V3 (deepseek-chat) or R1 (deepseek-reasoner)</span>
+infrarsi optimize ./train.sh \
+  --llm deepseek:deepseek-chat \
+  --rounds 10 \
+  --budget 5.0</code></pre>
+              </div>
+            </div>
+            <div>
+              <div class="code-box">
+                <div class="code-bar">
+                  <span>infrarsi.yaml (DeepSeek Config)</span>
+                  <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>project:
+  name: moe-training
+  root: .
+  entry_command: bash train.sh
+llm:
+  backend: deepseek
+  model: deepseek-chat
+  api_key_env: DEEPSEEK_API_KEY
+  base_url: https://api.deepseek.com/v1
+search:
+  strategy: bcomp
+  rounds: 10</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: 3rd-Party OpenAI / Anthropic Compatible APIs -->
+        <div id="tab-thirdparty" class="tab-panel">
+          <div class="tab-grid">
+            <div>
+              <h3 style="margin-bottom: 0.5rem;">
+                <span class="lang-en">Path 4: Any 3rd-Party OpenAI / Anthropic-Compatible API</span>
+                <span class="lang-zh">路径四：任意第三方 API（OpenRouter / 硅基流动 / Together / vLLM 等）</span>
+              </h3>
+              <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1rem;">
+                <span class="lang-en">
+                  Connect to any provider speaking the OpenAI Chat Completions or Anthropic Messages protocol using <code>--api-base</code> and <code>--api-key-env</code> (or <code>OPENAI_BASE_URL</code> / <code>OPENAI_API_KEY</code>). Works seamlessly with OpenRouter, SiliconFlow, Together AI, DeepInfra, Fireworks, or self-hosted vLLM/SGLang!
+                </span>
+                <span class="lang-zh">
+                  通过 <code>--api-base</code> 与 <code>--api-key-env</code>（或环境变量 <code>OPENAI_BASE_URL</code> / <code>OPENAI_API_KEY</code>），可无缝对接 OpenRouter、SiliconFlow（硅基流动）、Together AI、DeepInfra、阿里云百炼或本地部署的 vLLM / SGLang / Ollama 服务。
+                </span>
+              </p>
+              <div class="code-box">
+                <div class="code-bar">
+                  <span>Terminal — OpenRouter / SiliconFlow / Local vLLM</span>
+                  <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code><span class="code-comment"># Example A: OpenRouter</span>
+export OPENROUTER_API_KEY="sk-or-v1-..."
+infrarsi optimize ./train.sh \
+  --llm openai-compat:anthropic/claude-sonnet-4 \
+  --api-base https://openrouter.ai/api/v1 \
+  --api-key-env OPENROUTER_API_KEY
+
+<span class="code-comment"># Example B: SiliconFlow (硅基流动)</span>
+export SILICONFLOW_API_KEY="sk-..."
+infrarsi optimize ./train.sh \
+  --llm openai-compat:deepseek-ai/DeepSeek-V3 \
+  --api-base https://api.siliconflow.cn/v1 \
+  --api-key-env SILICONFLOW_API_KEY</code></pre>
+              </div>
+            </div>
+            <div>
+              <div class="code-box">
+                <div class="code-bar">
+                  <span>infrarsi.yaml (Custom Endpoint Config)</span>
+                  <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>project:
+  name: custom-api-run
+  root: .
+  entry_command: bash train.sh
+llm:
+  backend: openai-compat
+  model: deepseek-ai/DeepSeek-V3
+  base_url: https://api.siliconflow.cn/v1
+  api_key_env: SILICONFLOW_API_KEY
+search:
+  strategy: bcomp
+  rounds: 8</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Special Stopping Conditions & Clever Token Budget Control -->
+    <section id="stopping">
+      <div class="section-header">
+        <span class="section-tag">
+          <span class="lang-en">Autonomous Stopping Conditions &amp; Smart Token Governance</span>
+          <span class="lang-zh">智能停止条件与自适应 Token 预算控制</span>
+        </span>
+        <h2 class="section-title">
+          <span class="lang-en">Stop Exactly When Your Goal Is Reached—Without Blowing Your Budget</span>
+          <span class="lang-zh">精准设定目标阈值与预算上限，见好就收不浪费一分算力</span>
+        </h2>
+        <p class="section-desc">
+          <span class="lang-en">
+            InfraRSI lets you combine four orthogonal stopping criteria. Whichever target or ceiling is met first triggers a clean wind-down and exports the best verified patch immediately.
+          </span>
+          <span class="lang-zh">
+            InfraRSI 支持四大停止条件的任意组合。一旦达到目标性能指标或触及时间/预算上限，系统会立即安全收敛并导出当前最优的已验证补丁。
+          </span>
+        </p>
+      </div>
+
+      <div class="stop-grid">
+        <div class="stop-card">
+          <span class="flag-pill">--target-speedup 1.8</span>
+          <h4>
+            <span class="lang-en">1. Target Speedup Multiple</span>
+            <span class="lang-zh">1. 达到目标加速倍数</span>
+          </h4>
+          <p>
+            <span class="lang-en">
+              Halt as soon as a verified candidate achieves ≥ <code>1.8×</code> (or <code>1.8x</code>) wall-clock throughput speedup over the unoptimized baseline.
+            </span>
+            <span class="lang-zh">
+              当通过四道门禁验证的候选补丁达到基线训练速度的指定倍数（例如 <code>1.8</code> 或 <code>1.8x</code>）时，立即完成优化并导出补丁。
+            </span>
+          </p>
+        </div>
+
+        <div class="stop-card">
+          <span class="flag-pill">--target-mfu 0.45</span>
+          <h4>
+            <span class="lang-en">2. Target MFU Threshold</span>
+            <span class="lang-zh">2. 达到目标 MFU 指标</span>
+          </h4>
+          <p>
+            <span class="lang-en">
+              Specify a target Model FLOPs Utilization as a fraction (<code>0.45</code>) or percentage (<code>45%</code>). InfraRSI stops once verified hardware utilization hits your goal.
+            </span>
+            <span class="lang-zh">
+              支持以小数（<code>0.45</code>）或百分比（<code>45%</code>）设定目标 MFU（模型算力利用率），一旦实测 MFU 达标即刻停止搜索。
+            </span>
+          </p>
+        </div>
+
+        <div class="stop-card">
+          <span class="flag-pill">--max-wallclock 2h</span>
+          <h4>
+            <span class="lang-en">3. Wall-Clock Runtime Limit</span>
+            <span class="lang-zh">3. 设定最大运行时长</span>
+          </h4>
+          <p>
+            <span class="lang-en">
+              Pass <code>--max-wallclock 90m</code>, <code>2h</code>, or <code>--wall-hours 2.0</code>. Ideal for fitting optimization runs inside Slurm/PAI job windows or overnight schedules.
+            </span>
+            <span class="lang-zh">
+              支持传入 <code>--max-wallclock 90m</code>、<code>2h</code> 或 <code>--wall-hours 2.0</code>，完美契合集群调度作业时间窗或夜间无人值守任务。
+            </span>
+          </p>
+        </div>
+
+        <div class="stop-card">
+          <span class="flag-pill">--token-budget 500k</span>
+          <h4>
+            <span class="lang-en">4. Smart Token Budget</span>
+            <span class="lang-zh">4. 智能 Token 预算控制</span>
+          </h4>
+          <p>
+            <span class="lang-en">
+              Set an approximate token budget (e.g. <code>500k</code>, <code>1.5M</code>). Managed by the multi-zone <strong>TokenGovernor</strong> so search lands smoothly without abrupt mid-round truncation.
+            </span>
+            <span class="lang-zh">
+              支持设定近似 Token 预算（如 <code>500k</code>、<code>1.5M</code>），由三区自适应 <strong>TokenGovernor</strong> 精细调控，防止搜索在中途突兀中断。
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Clever TokenGovernor Deep Dive -->
+      <div class="governor-panel">
+        <h3 style="font-size: 1.2rem; margin-bottom: 0.45rem;">
+          <span class="lang-en">🧠 How InfraRSI Solves the "Approximate Token Budget" Challenge (<code>TokenGovernor</code>)</span>
+          <span class="lang-zh">🧠 巧思揭秘：InfraRSI 如何精准控制近似 Token 预算（<code>TokenGovernor</code>）</span>
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.92rem;">
+          <span class="lang-en">
+            Controlling token budgets in an iterative code-optimization loop is notoriously tricky: a hard cutoff at 100% can kill a promising multi-family composition right before verification, while CLI agents (like Codex CLI and Claude Code) attach 10k+ cached system tokens per turn. InfraRSI introduces two key mechanisms:
+          </span>
+          <span class="lang-zh">
+            在多轮代码进化搜索中控制 Token 预算存在两大难点：一是简单的“一刀切”硬截断会导致正在验证的高潜力补丁半途而废；二是 Claude / Codex CLI 每次调用都会附带上万个缓存系统提示词 Token。为此，InfraRSI 设计了双层巧思机制：
+          </span>
+        </p>
+
+        <div class="zone-bar">
+          <div class="zone-seg zone-green">
+            <span class="lang-en">🟢 Green Zone (0% – 70%) · Full Context &amp; Exploration</span>
+            <span class="lang-zh">🟢 充裕区 (0% – 70%) · 完整上下文与多家族探索</span>
+          </div>
+          <div class="zone-seg zone-amber">
+            <span class="lang-en">🟡 Economy (70% – 90%) · Compact Prompts</span>
+            <span class="lang-zh">🟡 节流区 (70% – 90%) · 历史压缩与紧凑输出</span>
+          </div>
+          <div class="zone-seg zone-rose">
+            <span class="lang-en">🔴 Wind-Down (90%+)</span>
+            <span class="lang-zh">🔴 收官区 (90%+)</span>
+          </div>
+        </div>
+
+        <div class="tab-grid" style="margin-top: 1rem;">
+          <div>
+            <ul style="list-style: none; display: grid; gap: 0.7rem; font-size: 0.9rem; color: var(--text-secondary);">
+              <li>
+                <strong style="color: #7dd3fc;">
+                  <span class="lang-en">1. Effective Token Accounting (CLI Cache Discounting):</span>
+                  <span class="lang-zh">1. 有效 Token 折算（CLI 缓存前缀 90% 豁免）：</span>
+                </strong>
+                <span class="lang-en">
+                  Computes <code>effective_tokens = uncached_input + 0.1 × cached_input + output_tokens</code>. Cached system headers in Claude Code / Codex CLI don't artificially drain your optimization budget.
+                </span>
+                <span class="lang-zh">
+                  按 <code>有效 Token = 未缓存输入 + 0.1 × 缓存前缀输入 + 输出 Token</code> 计费，避免 Claude Code / Codex CLI 固定系统前缀虚耗用户的搜索预算。
+                </span>
+              </li>
+              <li>
+                <strong style="color: #6ee7b7;">
+                  <span class="lang-en">2. Economy Zone Compression (70%–90%):</span>
+                  <span class="lang-zh">2. 节流区自适应上下文压缩（70%–90%）：</span>
+                </strong>
+                <span class="lang-en">
+                  Automatically trims ancestor failure reflections to top-2 summaries, condenses hardware logs, and tightens <code>max_tokens</code> so you get 2× more search rounds out of the remaining tokens.
+                </span>
+                <span class="lang-zh">
+                  当预算消耗超过 70% 时，自动将祖先反思记录压缩为 Top-2 摘要、精简 Profiler 日志并收紧单轮输出上限，让剩余 30% 预算多跑一倍轮次。
+                </span>
+              </li>
+              <li>
+                <strong style="color: #fda4af;">
+                  <span class="lang-en">3. Wind-Down Zone Soft Landing (90%–100%):</span>
+                  <span class="lang-zh">3. 收官区平滑收敛（90%–100%）：</span>
+                </strong>
+                <span class="lang-en">
+                  Restricts new risky branches and focuses strictly on verifying &amp; committing the highest-speedup archive candidate before gracefully halting.
+                </span>
+                <span class="lang-zh">
+                  超过 90% 预算后停止激进的新分支探索，全力完成当前最优候选补丁的最终验证与导出，实现优雅停机。
+                </span>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <div class="code-box" style="margin-bottom: 0;">
+              <div class="code-bar">
+                <span>Combined Stopping Criteria Example</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+              </div>
+              <pre><code>infrarsi optimize ./train.sh \
+  --llm deepseek:deepseek-chat \
+  --target-speedup 1.8 \
+  --target-mfu 45% \
+  --max-wallclock 2h \
+  --token-budget 500k</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Macro 5-Stage Pipeline & Micro B-Comp Search Algorithm -->
+    <section id="algorithm">
+      <div class="section-header">
+        <span class="section-tag">
+          <span class="lang-en">Core Architecture · Technical Report Fidelity</span>
+          <span class="lang-zh">核心算法架构 · 与技术报告严格一致</span>
+        </span>
+        <h2 class="section-title">
+          <span class="lang-en">5-Stage Macro Pipeline &amp; Micro B-Comp Evolutionary Search</span>
+          <span class="lang-zh">宏观五步闭环链路与微观 B-Comp 有界组合搜索算法</span>
+        </h2>
+        <p class="section-desc">
+          <span class="lang-en">
+            InfraRSI preserves 100% algorithmic fidelity with our technical report: a deterministic 5-stage macro harness coupled with the <strong>Bounded-Composition (B-Comp)</strong> micro search engine.
+          </span>
+          <span class="lang-zh">
+            InfraRSI 严格遵循技术报告中的双层核心设计：由 5 个阶段组成的宏观自动化链路，以及微观层面的 <strong>B-Comp（Bounded-Composition）</strong> 演化搜索算法。
+          </span>
+        </p>
+      </div>
+
+      <div class="pipeline-steps">
+        <div class="step-card">
+          <div class="step-num">Stage 01 · PARSE</div>
+          <h4>
+            <span class="lang-en">Entrypoint &amp; Topology Recon</span>
+            <span class="lang-zh">入口解析与硬件拓扑探测</span>
+          </h4>
+          <p>
+            <span class="lang-en">Parses <code>train.sh</code>, resolves <code>torchrun</code> / <code>deepspeed</code> / <code>accelerate</code> / <code>megatron</code> launchers, and fingerprints GPUs, VRAM, and interconnect.</span>
+            <span class="lang-zh">自动解析启动脚本中的 <code>torchrun</code> / <code>deepspeed</code> / <code>accelerate</code> / <code>megatron</code> 入口，并采集 GPU 型号、显存与互联拓扑。</span>
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">Stage 02 · BASELINE</div>
+          <h4>
+            <span class="lang-en">Baseline &amp; Bottleneck Profile</span>
+            <span class="lang-zh">基线定标与性能瓶颈剖析</span>
+          </h4>
+          <p>
+            <span class="lang-en">Executes the unmodified training script to record baseline tokens/sec, step latency, peak VRAM, MFU, and reference loss curve checkpoints.</span>
+            <span class="lang-zh">运行原始未修改脚本，精确记录基线吞吐（tokens/s）、单步耗时、峰值显存、MFU 以及参考 Loss 曲线。</span>
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">Stage 03 · B-COMP</div>
+          <h4>
+            <span class="lang-en">Bounded-Composition Search</span>
+            <span class="lang-zh">B-Comp 有界组合演化搜索</span>
+          </h4>
+          <p>
+            <span class="lang-en">Samples optimization families via UCB bandit, selects top archive parents, and synthesizes orthogonal single- or multi-family git patches.</span>
+            <span class="lang-zh">通过 UCB 多臂赌博机采样优化家族，从精英档案库选取父节点，并遵循兼容性矩阵合成单家族或多家族组合补丁。</span>
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">Stage 04 · VERIFY</div>
+          <h4>
+            <span class="lang-en">4-Gate Equivalence Audit</span>
+            <span class="lang-zh">四道正确性与等价性门禁</span>
+          </h4>
+          <p>
+            <span class="lang-en">Enforces Gate 1 (Exit/Syntax), Gate 2 (Batch/Step Equivalence), Gate 3 (Loss ≤ 3% deviation), and Gate 4 (Fresh Re-run Speedup).</span>
+            <span class="lang-zh">依次执行门禁 1（进程与反作弊检查）、门禁 2（全局 Batch 与步数不变）、门禁 3（Loss 偏差 ≤3%）与门禁 4（独立复测加速比）。</span>
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">Stage 05 · EXPORT</div>
+          <h4>
+            <span class="lang-en">Patch &amp; Ledger Export</span>
+            <span class="lang-zh">最优补丁与实验账本导出</span>
+          </h4>
+          <p>
+            <span class="lang-en">Exports <code>best_optimization.patch</code>, an optimized launch script, and a full JSONL trajectory ledger for 1-command reproducibility.</span>
+            <span class="lang-zh">自动导出标准 Git 补丁 <code>best_optimization.patch</code>、优化后启动脚本与完整 JSONL 演化轨迹账本。</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- 6 Optimization Families Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Family ID</th>
+              <th>
+                <span class="lang-en">Optimization Family</span>
+                <span class="lang-zh">B-Comp 优化家族</span>
+              </th>
+              <th>
+                <span class="lang-en">Representative System Knobs &amp; Transformations</span>
+                <span class="lang-zh">典型底层算子与系统调优原语</span>
+              </th>
+              <th>
+                <span class="lang-en">Orthogonal Composable Families</span>
+                <span class="lang-zh">正交可组合家族</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>F1</code></td>
+              <td>
+                <strong>
+                  <span class="lang-en">Attention &amp; Kernel Path</span>
+                  <span class="lang-zh">注意力与融合算子路径</span>
+                </strong>
+              </td>
+              <td>FlashAttention-2/3, CuDNN SDPA, fused RoPE, fused CrossEntropy, RMSNorm / SwiGLU Triton kernels</td>
+              <td><code>F2, F3, F4, F5, F6</code></td>
+            </tr>
+            <tr>
+              <td><code>F2</code></td>
+              <td>
+                <strong>
+                  <span class="lang-en">Precision &amp; Graph Compile</span>
+                  <span class="lang-zh">混合精度与图编译优化</span>
+                </strong>
+              </td>
+              <td><code>bf16</code> / <code>fp8</code> autocast, TF32 matmul, <code>torch.compile(mode="max-autotune-no-cudagraphs")</code>, fused AdamW</td>
+              <td><code>F1, F3, F5, F6</code></td>
+            </tr>
+            <tr>
+              <td><code>F3</code></td>
+              <td>
+                <strong>
+                  <span class="lang-en">Micro-Batch &amp; Grad Accum</span>
+                  <span class="lang-zh">微批次重排与梯度累积（保持全局 Batch 不变）</span>
+                </strong>
+              </td>
+              <td>Iso-global-batch <code>(micro_batch_size × grad_accum_steps)</code> rebalancing to saturate GPU Tensor Cores</td>
+              <td><code>F1, F2, F4, F5, F6</code></td>
+            </tr>
+            <tr>
+              <td><code>F4</code></td>
+              <td>
+                <strong>
+                  <span class="lang-en">Activation Checkpointing &amp; Memory</span>
+                  <span class="lang-zh">选择性激活重计算与显存布局</span>
+                </strong>
+              </td>
+              <td>Selective layer/op activation checkpointing, <code>expandable_segments:True</code>, memory-Format contiguous alignment</td>
+              <td><code>F1, F3, F5, F6</code></td>
+            </tr>
+            <tr>
+              <td><code>F5</code></td>
+              <td>
+                <strong>
+                  <span class="lang-en">Distributed Comm &amp; Overlap</span>
+                  <span class="lang-zh">分布式通信与计算重叠</span>
+                </strong>
+              </td>
+              <td>DDP/FSDP/ZeRO bucket sizing, <code>overlap_grad_reduce</code>, async all-gather, NCCL ring/tree tuning, MoE dispatch</td>
+              <td><code>F1, F2, F3, F4, F6</code></td>
+            </tr>
+            <tr>
+              <td><code>F6</code></td>
+              <td>
+                <strong>
+                  <span class="lang-en">Data Pipeline &amp; Host-Device Overlap</span>
+                  <span class="lang-zh">数据加载流水线与异步拷贝</span>
+                </strong>
+              </td>
+              <td><code>num_workers</code>, <code>pin_memory</code>, <code>persistent_workers</code>, <code>prefetch_factor</code>, non-blocking H2D transfers</td>
+              <td><code>F1, F2, F3, F4, F5</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 5: Benchmarks Across 4 Production Workloads -->
+    <section id="benchmarks">
+      <div class="section-header">
+        <span class="section-tag">
+          <span class="lang-en">Empirical Evaluation · 4 Production Workloads</span>
+          <span class="lang-zh">实测性能评估 · 四组真实大模型训练负载</span>
+        </span>
+        <h2 class="section-title">
+          <span class="lang-en">Verified End-to-End Training Speedups Across H100 &amp; L20X Clusters</span>
+          <span class="lang-zh">跨 H100 与 L20X 集群的四组真实大模型训练加速表现</span>
+        </h2>
+        <p class="section-desc">
+          <span class="lang-en">
+            Evaluated across Qwen3.5-9B (8×H100), Gemma-4 (8×L20X), Qwen3.8-27B (8×L20X), and Qwen3.5-35B MoE (16×H100). Every speedup point below passed all 4 correctness &amp; numerical equivalence gates.
+          </span>
+          <span class="lang-zh">
+            在 Qwen3.5-9B (8×H100)、Gemma-4 (8×L20X)、Qwen3.8-27B (8×L20X) 与 Qwen3.5-35B MoE (16×H100) 四组负载上实测对比，所有加速结果均 100% 通过四道等价性验证门禁。
+          </span>
+        </p>
+      </div>
+
+      <div class="figure-frame lang-en">
+        <img src="assets/benchmark_4tasks.svg" alt="InfraRSI 4-Workload Benchmark Results (EN)" />
+      </div>
+      <div class="figure-frame lang-zh">
+        <img src="assets/benchmark_4tasks_zh.svg" alt="InfraRSI 四组大模型训练负载实测加速对比 (ZH)" />
+      </div>
+    </section>
+
+    <!-- Section 6: Complete CLI Reference -->
+    <section id="reference">
+      <div class="section-header">
+        <span class="section-tag">
+          <span class="lang-en">CLI &amp; Flag Reference</span>
+          <span class="lang-zh">CLI 命令与参数速查手册</span>
+        </span>
+        <h2 class="section-title">
+          <span class="lang-en">Everything Controlled from a Clean, Composable CLI</span>
+          <span class="lang-zh">简洁统一的命令行接口参考</span>
+        </h2>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Flag / Option</th>
+              <th>
+                <span class="lang-en">Category</span>
+                <span class="lang-zh">类别</span>
+              </th>
+              <th>
+                <span class="lang-en">Description &amp; Examples</span>
+                <span class="lang-zh">功能说明与示例</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>--llm &lt;spec&gt;</code></td>
+              <td>LLM Backend</td>
+              <td>
+                <span class="lang-en"><code>claude-cli</code>, <code>codex-cli</code>, <code>deepseek:deepseek-chat</code>, <code>deepseek:deepseek-reasoner</code>, <code>openai-compat:&lt;model&gt;</code>, or <code>auto</code>.</span>
+                <span class="lang-zh">支持 <code>claude-cli</code>、<code>codex-cli</code>、<code>deepseek:deepseek-chat</code>、<code>deepseek:deepseek-reasoner</code>、<code>openai-compat:&lt;model&gt;</code> 或 <code>auto</code>。</span>
+              </td>
+            </tr>
+            <tr>
+              <td><code>--api-base &lt;url&gt;</code></td>
+              <td>LLM Backend</td>
+              <td>
+                <span class="lang-en">Custom base URL for 3rd-party or local OpenAI/Anthropic-compatible APIs (e.g. <code>https://openrouter.ai/api/v1</code>).</span>
+                <span class="lang-zh">自定义第三方或本地兼容 API 的 Base URL（例如 <code>https://api.siliconflow.cn/v1</code>）。</span>
+              </td>
+            </tr>
+            <tr>
+              <td><code>--api-key-env &lt;var&gt;</code></td>
+              <td>LLM Backend</td>
+              <td>
+                <span class="lang-en">Environment variable name storing your API key (e.g. <code>DEEPSEEK_API_KEY</code>, <code>OPENROUTER_API_KEY</code>).</span>
+                <span class="lang-zh">存放 API Key 的环境变量名（例如 <code>DEEPSEEK_API_KEY</code>、<code>OPENROUTER_API_KEY</code>）。</span>
+              </td>
+            </tr>
+            <tr>
+              <td><code>--target-speedup &lt;x&gt;</code></td>
+              <td>Stopping Condition</td>
+              <td>
+                <span class="lang-en">Stop automatically when verified speedup reaches multiple (e.g. <code>1.8</code> or <code>1.8x</code>).</span>
+                <span class="lang-zh">当实测加速比达到目标倍数（如 <code>1.8</code> 或 <code>1.8x</code>）时自动停止。</span>
+              </td>
+            </tr>
+            <tr>
+              <td><code>--target-mfu &lt;val&gt;</code></td>
+              <td>Stopping Condition</td>
+              <td>
+                <span class="lang-en">Stop automatically when Model FLOPs Utilization reaches target (e.g. <code>0.45</code> or <code>45%</code>).</span>
+                <span class="lang-zh">当模型算力利用率（MFU）达到目标值（如 <code>0.45</code> 或 <code>45%</code>）时自动停止。</span>
+              </td>
+            </tr>
+            <tr>
+              <td><code>--max-wallclock &lt;dur&gt;</code></td>
+              <td>Stopping Condition</td>
+              <td>
+                <span class="lang-en">Stop when total elapsed runtime reaches duration (e.g. <code>90m</code>, <code>2h</code>, or <code>--wall-hours 2.0</code>).</span>
+                <span class="lang-zh">当总运行时长达到设定上限（如 <code>90m</code>、<code>2h</code> 或 <code>--wall-hours 2.0</code>）时停止。</span>
+              </td>
+            </tr>
+            <tr>
+              <td><code>--token-budget &lt;tok&gt;</code></td>
+              <td>Stopping Condition</td>
+              <td>
+                <span class="lang-en">Approximate token budget managed by the 3-Zone <code>TokenGovernor</code> (e.g. <code>500k</code>, <code>2M</code>).</span>
+                <span class="lang-zh">由三区自适应 <code>TokenGovernor</code> 管理的近似 Token 预算（如 <code>500k</code>、<code>2M</code>）。</span>
+              </td>
+            </tr>
+            <tr>
+              <td><code>--budget &lt;usd&gt;</code></td>
+              <td>Stopping Condition</td>
+              <td>
+                <span class="lang-en">Maximum cumulative API spend in USD (default: <code>10.0</code>).</span>
+                <span class="lang-zh">最大累计 API 美元花费上限（默认：<code>10.0</code>）。</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>
+        <strong>InfraRSI</strong> — Autonomous Recursive Self-Improvement for LLM Training Infrastructure ·
+        <a href="https://github.com/YuchuanTian/infrasmith" target="_blank" rel="noopener">GitHub Repository</a> ·
+        <a href="https://github.com/infrarsi" target="_blank" rel="noopener">InfraRSI Organization</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    function setLang(lang) {
+      document.documentElement.setAttribute('data-lang', lang);
+      document.documentElement.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      document.getElementById('btn-zh').classList.toggle('active', lang === 'zh');
+      try { localStorage.setItem('infrarsi_lang', lang); } catch (e) {}
+    }
+
+    function switchTab(evt, panelId) {
+      const buttons = document.querySelectorAll('.tab-btn');
+      const panels = document.querySelectorAll('.tab-panel');
+      buttons.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      evt.currentTarget.classList.add('active');
+      document.getElementById(panelId).classList.add('active');
+    }
+
+    function copyCode(btn) {
+      const pre = btn.closest('.code-box').querySelector('pre');
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        const old = btn.innerText;
+        btn.innerText = 'Copied ✓';
+        setTimeout(() => { btn.innerText = old; }, 1600);
+      });
+    }
+
+    (function initLang() {
+      const params = new URLSearchParams(window.location.search);
+      const qLang = params.get('lang');
+      if (qLang === 'zh' || qLang === 'en') {
+        setLang(qLang);
+        return;
+      }
+      try {
+        const saved = localStorage.getItem('infrarsi_lang');
+        if (saved === 'zh' || saved === 'en') {
+          setLang(saved);
+        }
+      } catch (e) {}
+    })();
+  </script>
+</body>
+</html>
